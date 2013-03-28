@@ -863,7 +863,9 @@ MozMillController.prototype.select = function (el, indx, option, value) {
         }
         else if (entry.label == "") i += 1;
       }
-      
+
+      item.scrollIntoView();
+
       EventUtils.synthesizeMouse(item, 1, 1, {}, ownerDoc.defaultView);
       this.sleep(0);
       
