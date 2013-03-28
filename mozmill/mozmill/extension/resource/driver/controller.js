@@ -82,7 +82,7 @@ var windowMap = {
    *        Outer ID of the window to check.
    * @param {String} aProperty
    *        Property to update the value for
-   * @param {Object} 
+   * @param {Object}
    *        Value to set
    */
   update : function (aWindowId, aProperty, aValue) {
@@ -313,6 +313,10 @@ var MozMillController = function (window) {
     return window != null && this.isLoaded();
   }, "controller(): Window could not be initialized.", undefined, undefined, this);
 
+  // Ensure to focus the window which will move it virtually into the foreground
+  // when focusmanager.testmode is set enabled.
+  this.window.focus();
+
   var windowType = window.document.documentElement.getAttribute('windowtype');
   if (controllerAdditions[windowType] != undefined ) {
     this.prototype = new utils.Copy(this.prototype);
@@ -349,7 +353,7 @@ MozMillController.prototype.open = function (url) {
 
 /**
  * Take a screenshot of specified node
- * 
+ *
  * @param {Element} node
  *        The window or DOM element to capture
  * @param {String} name
@@ -686,7 +690,7 @@ MozMillController.prototype.assertJSProperty = function (el, attrib, val) {
   if (res) {
     broker.pass({'function':'Controller.assertJSProperty("' + el.getInfo() + '") : ' + val});
   } else {
-    throw new Error("Controller.assertJSProperty(" + el.getInfo() + ") : " + 
+    throw new Error("Controller.assertJSProperty(" + el.getInfo() + ") : " +
                     (val === undefined ? "property '" + attrib +
                     "' doesn't exist" : val + " == " + value));
   }
@@ -694,7 +698,7 @@ MozMillController.prototype.assertJSProperty = function (el, attrib, val) {
   return true;
 };
 
-/** 
+/**
  * Assert that an element's javascript property doesn't exist or doesn't have a particular value
  *
  * if val is undefined, will return true if the property doesn't exist.
@@ -722,7 +726,7 @@ MozMillController.prototype.assertNotJSProperty = function (el, attrib, val) {
   return true;
 };
 
-/** 
+/**
  * Assert that an element's dom property exists or has a particular value
  *
  * if val is undefined, will return true if the property exists.
@@ -778,7 +782,7 @@ MozMillController.prototype.assertNotDOMProperty = function (el, attrib, val) {
   if (!res) {
     broker.pass({'function':'Controller.assertNotDOMProperty("' + el.getInfo() + '") : ' + val});
   } else {
-    throw new Error("Controller.assertNotDOMProperty(" + el.getInfo() + ") : " + 
+    throw new Error("Controller.assertNotDOMProperty(" + el.getInfo() + ") : " +
                     (val == undefined ? "property '" + attrib +
                     "' exists" : val + " == " + value));
   }
@@ -1074,7 +1078,7 @@ MozMillController.prototype.assertPropertyNotExist = function (el, attrib) {
 MozMillController.prototype.select = function (aElement, index, option, value) {
   logDeprecated("controller.select", "Use the MozMillElement object.");
 
-  return aElement.select(index, option, value); 
+  return aElement.select(index, option, value);
 };
 
 MozMillController.prototype.keypress = function (aElement, aKey, aModifiers, aExpectedEvent) {
