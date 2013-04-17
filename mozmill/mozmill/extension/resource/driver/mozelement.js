@@ -639,6 +639,8 @@ MozMillDropList.prototype.select = function (indx, option, value) {
         EventUtils.synthesizeKey("VK_DOWN", {}, ownerDoc.defaultView);
       }
 
+      utils.sleep(0);
+
       EventUtils.synthesizeMouse(item, 1, 1, {}, ownerDoc.defaultView);
 
       broker.pass({'function':'MozMillDropList.select()'});
