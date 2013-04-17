@@ -630,14 +630,8 @@ MozMillDropList.prototype.select = function (indx, option, value) {
     try {
       EventUtils.synthesizeMouse(this.element, 1, 1, {}, ownerDoc.defaultView);
 
-      // Scroll down until item is visible
-      for (var i = 0; i <= menuitems.length; ++i) {
-        var selected = this.element.boxObject.QueryInterface(Ci.nsIMenuBoxObject).activeChild;
-        if (item == selected) {
-          break;
-        }
-        EventUtils.synthesizeKey("VK_DOWN", {}, ownerDoc.defaultView);
-      }
+      utils.sleep(0);
+      item.scrollIntoView();
 
       EventUtils.synthesizeMouse(item, 1, 1, {}, ownerDoc.defaultView);
 
