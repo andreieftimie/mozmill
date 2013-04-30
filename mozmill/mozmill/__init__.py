@@ -411,8 +411,6 @@ class MozMill(object):
                         self.stop_runner()
                         frame = None
 
-                        self.runner.reset()
-
                 except JSBridgeDisconnectError:
                     frame = None
 
