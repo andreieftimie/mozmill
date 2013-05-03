@@ -4,9 +4,10 @@
 
 var EXPORTED_SYMBOLS = ["Copy", "getChromeWindow", "getWindows",
                         "getWindowByTitle", "getWindowByType", "getWindowId",
-                        "getMethodInWindows", "getPreference", "setPreference",
-                        "sleep", "assert", "unwrapNode", "TimeoutError", "waitFor",
-                        "saveDataURL", "takeScreenshot", "startTimer", "stopTimer",
+                        "getMethodInWindows", "getPreference", "isVisible",
+                        "setPreference", "sleep", "assert", "unwrapNode",
+                        "TimeoutError", "waitFor", "saveDataURL", "takeScreenshot",
+                        "startTimer", "stopTimer",
                        ];
 
 const Cc = Components.classes;
@@ -472,6 +473,29 @@ var gutility_mzmltimer = 0;
 function startTimer(){
   dump("TIMERCHECK:: starting now: " + Date.now() + "\n");
   gutility_mzmltimer = Date.now();
+}
+
+/**
+ * Checks the visibility of an element.
+ *
+ * @param  {ElemBase} elem  Element to check its visibility
+ * @return {Boolean}  If element is visible or not
+ */
+function isVisible(elem) {
+  var element = elem.getNode();
+  var visible = false;
+
+  switch (element.nodeName) {
+    case 'panel':
+      visible = (element.state === 'open');
+      break;
+    default:
+      visible = (element.style.visibility !== 'hidden') &&
+                (element.style.display !== "none") &&
+                (element.scrollWidth > 0) &&
+                (element.scrollHeight > 0);
+  }
+  return visible;
 }
 
 /**

@@ -266,6 +266,14 @@ MozMillElement.prototype.mouseEvent = function (aOffsetX, aOffsetY, aEvent, aExp
                                           "MozMillElement.mouseEvent()",
                                           this.element.ownerDocument.defaultView);
   } else {
+
+    // dump('\n\n==========\n')
+    // for (key in this.element){
+
+    //     dump('\n' + key)
+    // }
+    // dump('\n\n==========\n\n')
+
     EventUtils.synthesizeMouse(this.element, aOffsetX, aOffsetY, aEvent,
                                this.element.ownerDocument.defaultView);
   }
@@ -370,7 +378,7 @@ MozMillElement.prototype.waitForElement = function (timeout, interval) {
   var elem = this;
 
   utils.waitFor(function () {
-    return elem.exists();
+    return elem.exists()/* && utils.isVisible(elem)*/;
   }, "Timeout exceeded for waitForElement " + this.getInfo(), timeout, interval);
 
   broker.pass({'function':'MozMillElement.waitForElement()'});
