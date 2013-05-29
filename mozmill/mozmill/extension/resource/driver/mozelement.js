@@ -562,7 +562,7 @@ MozMillDropList.prototype = Object.create(MozMillElement.prototype, {
      * Select the specified option and trigger the relevant events of the element
      * @return {boolean}
      */
-    value : function MMDL_select(indx, option, value) {
+    value : function MMDL_select(index, option, value) {
       if (!this.element){
         throw new Error("Could not find element " + this.getInfo());
       }
@@ -572,18 +572,18 @@ MozMillDropList.prototype = Object.create(MozMillElement.prototype, {
         var item = null;
 
         // The selected item should be set via its index
-        if (indx != undefined) {
+        if (index != undefined) {
           // Resetting a menulist has to be handled separately
-          if (indx == -1) {
+          if (index == -1) {
             this.dispatchEvent('focus', false);
-            this.element.selectedIndex = indx;
+            this.element.selectedIndex = index;
             this.dispatchEvent('change', true);
 
             broker.pass({'function':'MozMillDropList.select()'});
 
             return true;
           } else {
-            item = this.element.options.item(indx);
+            item = this.element.options.item(index);
           }
         } else {
           for (var i = 0; i < this.element.options.length; i++) {
@@ -603,6 +603,22 @@ MozMillDropList.prototype = Object.create(MozMillElement.prototype, {
           item.selected = true;
           this.dispatchEvent('change', true);
 
+          var self = this;
+          var selected = value || option || self.element.selectedIndex;
+          utils.waitFor(function () {
+            switch (selected) {
+              case value:
+                return selected == item.value;
+                break;
+              case option:
+                return selected == item.label;
+                break;
+              case index:
+                return selected == index;
+                break;
+            }
+          }, "The correct item has been selected");
+
           broker.pass({'function':'MozMillDropList.select()'});
 
           return true;
@@ -620,8 +636,8 @@ MozMillDropList.prototype = Object.create(MozMillElement.prototype, {
 
         var item = null;
 
-        if (indx != undefined) {
-          if (indx == -1) {
+        if (index != undefined) {
+          if (index == -1) {
             this.dispatchEvent('focus', false);
             this.element.boxObject.QueryInterface(Ci.nsIMenuBoxObject).activeChild = null;
             this.dispatchEvent('change', true);
@@ -630,7 +646,7 @@ MozMillDropList.prototype = Object.create(MozMillElement.prototype, {
 
             return true;
           } else {
-            item = menuitems[indx];
+            item = menuitems[index];
           }
         } else {
           for (var i = 0; i < menuitems.length; i++) {
@@ -646,17 +662,28 @@ MozMillDropList.prototype = Object.create(MozMillElement.prototype, {
         // Click the item
         try {
           EventUtils.synthesizeMouse(this.element, 1, 1, {}, ownerDoc.defaultView);
+          utils.sleep(0);
 
-          // Scroll down until item is visible
-          for (var i = 0; i <= menuitems.length; ++i) {
-            var selected = this.element.boxObject.QueryInterface(Ci.nsIMenuBoxObject).activeChild;
-            if (item == selected) {
-              break;
-            }
-            EventUtils.synthesizeKey("VK_DOWN", {}, ownerDoc.defaultView);
-          }
+          item.scrollIntoView();
 
           EventUtils.synthesizeMouse(item, 1, 1, {}, ownerDoc.defaultView);
+          utils.sleep(0);
+
+          var self = this;
+          var selected = value || option || self.element.selectedIndex;
+          utils.waitFor(function () {
+            switch (selected) {
+              case value:
+                return selected == item.value;
+                break;
+              case option:
+                return selected == item.label;
+                break;
+              case index:
+                return selected == index;
+                break;
+            }
+          }, "The correct item has been selected");
 
           broker.pass({'function':'MozMillDropList.select()'});
 
