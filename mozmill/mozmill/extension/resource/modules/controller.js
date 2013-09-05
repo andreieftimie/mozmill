@@ -855,7 +855,20 @@ MozMillController.prototype.select = function (el, index, option, value) {
     // Click the item
     try {
       element.click();
-      item.scrollIntoView();
+      if ("scrollIntoView" in item) {
+        item.scrollIntoView();
+      }
+      else {
+        // Workaround for ESR17 where scrollIntoView is not available
+        // Scroll down until item is visible
+        for (var i = s = element.selectedIndex; i <= element.itemCount + s; ++i) {
+          var entry = element.getItemAtIndex((i + 1) % element.itemCount);
+          EventUtils.synthesizeKey("VK_DOWN", {}, ownerDoc.defaultView);
+          if (entry.label == item.label)
+            break;
+          else if (entry.label == "") i += 1;
+        }
+      }
       item.click();
 
       var selected = index || option || value;
