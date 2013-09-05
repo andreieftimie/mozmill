@@ -1030,7 +1030,9 @@ MozMillDropList.prototype = Object.create(MozMillElement.prototype, {
         // Click the item
         try {
           this.element.click();
-          item.scrollIntoView();
+          if ("scrollIntoView" in item) {
+            item.scrollIntoView();
+          }
           item.click();
 
           var self = this;
