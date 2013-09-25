@@ -45,7 +45,11 @@ global_options = [
      dict(dest="restart",
           default=False,
           action="store_true",
-          help="Isolation mode (restart between each Mozmill test)"))
+          help="Isolation mode (restart between each Mozmill test)")),
+    (("--app", "--app"),
+     dict(dest="app",
+          default='firefox',
+          help="Application to use [Default: %default]"))
 ]
 
 # Maximum time we'll wait for tests to finish, in seconds.
@@ -186,8 +190,9 @@ def test_all_js(tests, options):
     # Create logger for console
     level = "DEBUG" if options.verbose else "INFO"
     logger = LoggerListener(console_level=level)
-
-    m = mozmill.MozMill.create(handlers=[logger])
+    
+    m = mozmill.MozMill.create(handlers=[logger], app=options.app)
+    
     try:
         m.run(tests, options.restart)
     except:
