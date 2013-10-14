@@ -446,6 +446,12 @@ MozMillController.prototype.restartApplication = function (aNext, aFlags) {
                                   'next': aNext,
                                   'timeout': 0 });
 
+  // Bug 922995
+  // Mozmill fails with a IO Completion error if we throw the
+  // ApplicationQuitError before the shutdown stream above finishes
+  // This sleep should we replaced with a wait for the actual message to finish
+  this.sleep(100);
+
   // We have to ensure to stop the test from continuing until the application is
   // shutting down. The only way to do that is by throwing an exception.
   throw new errors.ApplicationQuitError();
@@ -473,6 +479,12 @@ MozMillController.prototype.stopApplication = function (aResetProfile, aFlags) {
                                   'flags': flags,
                                   'resetProfile': aResetProfile,
                                   'timeout': 0 });
+
+  // Bug 922995
+  // Mozmill fails with a IO Completion error if we throw the
+  // ApplicationQuitError before the shutdown stream above finishes
+  // This sleep should we replaced with a wait for the actual message to finish
+  this.sleep(100);
 
   // We have to ensure to stop the test from continuing until the application is
   // shutting down. The only way to do that is by throwing an exception.
