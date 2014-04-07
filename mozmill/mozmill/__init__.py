@@ -369,7 +369,7 @@ class MozMill(object):
 
         """
         try:
-            frame.runTestFile(path, name)
+            current_test = frame.runTestFile(path, name)
         except JSBridgeDisconnectError:
             # if the runner is restarted via JS, run this test
             # again if the next is specified
@@ -381,6 +381,9 @@ class MozMill(object):
 
             self.handle_disconnect()
             frame = self.run_test_file(self.start_runner(), path, nextTest)
+
+        if current_test is not True:
+            self.handle_unexpected_error(path)
 
         return frame
 
@@ -519,6 +522,12 @@ class MozMill(object):
             # try to use a profile which is still in use
             self.runner.wait(timeout=self.jsbridge_timeout)
 
+    def handle_unexpected_error(self, path=None):
+        """Handle an unknown error for the active process"""
+        self.running_test = {path: path}
+        self.report_disconnect('Unexpected framework failure')
+        self.stop_runner()
+
     def report_disconnect(self, message=None):
         message = message or 'Disconnect Error: Application unexpectedly closed'
 
@@ -532,7 +541,7 @@ class MozMill(object):
         test['passed'] = 0
         test['failed'] = 1
 
-        # Ensure that we log this disconnect as failure
+        # Ensure that we  log this disconnect as failure
         self.results.alltests.append(test)
         self.results.fails.append(test)
 

@@ -771,6 +771,7 @@ Runner.prototype.execFunction = function runner_execFunction(func, arg) {
 };
 
 function runTestFile(filename, name) {
+fail;
   var runner = new Runner();
   runner.runTestFile(filename, name);
   runner.end();
