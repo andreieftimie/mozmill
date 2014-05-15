@@ -7,6 +7,8 @@ import unittest
 
 import mozmill
 
+here = os.path.dirname(os.path.abspath(__file__))
+
 class TestPageLoad(unittest.TestCase):
 
     def test_slow_pageload_on_startup(self):
@@ -20,7 +22,8 @@ class TestPageLoad(unittest.TestCase):
 
         runner_args = {'cmdargs': ['http://www.nbc.com']}
 
-        m = mozmill.MozMill.create(runner_args=runner_args)
+        m = mozmill.MozMill.create(runner_args=runner_args,
+                                   server_root=os.path.join(here, '../data'))
         m.run(tests)
         results = m.finish(())
 

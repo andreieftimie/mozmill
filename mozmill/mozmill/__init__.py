@@ -18,6 +18,7 @@ from manifestparser import TestManifest
 import mozinfo
 import mozrunner
 from mozrunner.utils import get_metadata_from_egg
+import wptserve
 
 import jsbridge
 from jsbridge.network import JSBridgeDisconnectError
@@ -36,6 +37,7 @@ extension_path = os.path.join(basedir, 'extension')
 # defaults
 ADDONS = [extension_path, jsbridge.extension_path]
 JSBRIDGE_TIMEOUT = 60.
+WEB_SERVER_PORT = 43336
 
 # Environment variables
 ENVIRONMENT = {
@@ -101,7 +103,7 @@ class MozMill(object):
     @classmethod
     def create(cls, jsbridge_timeout=JSBRIDGE_TIMEOUT,
                handlers=None, app='firefox', profile_args=None,
-               runner_args=None, screenshots_path=None):
+               runner_args=None, screenshots_path=None, server_root=None):
 
         jsbridge_port = jsbridge.find_port()
 
@@ -138,11 +140,12 @@ class MozMill(object):
 
         # create a mozmill
         return cls(runner, jsbridge_port, jsbridge_timeout=jsbridge_timeout,
-                   handlers=handlers, screenshots_path=screenshots_path)
+                   handlers=handlers, screenshots_path=screenshots_path,
+                   server_root=server_root)
 
     def __init__(self, runner, jsbridge_port,
                  jsbridge_timeout=JSBRIDGE_TIMEOUT, handlers=None,
-                 screenshots_path=None):
+                 screenshots_path=None, server_root=None):
         """Constructor of the Mozmill class.
 
         Arguments:
@@ -153,10 +156,14 @@ class MozMill(object):
         jsbridge_timeout -- How long to wait without a jsbridge communication
         handlers -- pluggable event handlers
         screenshots_path -- Path where screenshots will be saved
+        server_root -- Path where to serve testcase files from
 
         """
         # the MozRunner
         self.runner = runner
+
+        self.server_root = server_root
+        self.http_server_start()
 
         # execution parameters
         self.debugger = None
@@ -321,7 +328,8 @@ class MozMill(object):
             if self.shutdownMode.get('resetProfile'):
                 # reset the profile
                 self.runner.reset()
-
+            self.runner.profile.set_preferences({'extensions.mozmill.baseurl':
+                                                 self.http_server.get_url()})
             self.runner.start(debug_args=self.debugger,
                               interactive=self.interactive)
 
@@ -347,9 +355,6 @@ class MozMill(object):
         try:
             frame = jsbridge.JSObject(self.bridge, js_module_frame)
 
-            # start HTTPd server
-            frame.startHTTPd()
-
             # transfer persisted data
             frame.persisted = self.persisted
         except:
@@ -359,17 +364,22 @@ class MozMill(object):
         # return the frame
         return frame
 
-    def run_test_file(self, frame, path, name=None):
+    def run_test_file(self, frame, test, name=None):
         """Run a single test file.
 
         Arguments:
         frame -- JS frame object
-        path -- Path to the test file
+        test -- Test object
         name -- Name of test to run (if None, run all tests)
 
         """
         try:
-            frame.runTestFile(path, name)
+            # set docroot
+            if not self.server_root and 'server-root' in test:
+                path = test['path'].split(test['relpath'])[0]
+                root = os.path.abspath(os.path.join(path, test['server-root']))
+                self.http_server.router.doc_root = root
+            frame.runTestFile(test['path'], name)
         except JSBridgeDisconnectError:
             # if the runner is restarted via JS, run this test
             # again if the next is specified
@@ -380,7 +390,7 @@ class MozMill(object):
                 raise
 
             self.handle_disconnect()
-            frame = self.run_test_file(self.start_runner(), path, nextTest)
+            frame = self.run_test_file(self.start_runner(), test, nextTest)
 
         return frame
 
@@ -423,7 +433,7 @@ class MozMill(object):
 
                 try:
                     frame = self.run_test_file(frame or self.start_runner(),
-                                               test['path'])
+                                               test)
 
                     # If a restart is requested between each test stop the runner
                     # and reset the profile
@@ -576,6 +586,9 @@ class MozMill(object):
             self.back_channel.close()
             self.bridge.close()
 
+        # stop the http server
+        self.http_server_stop()
+
         # release objects
         self.back_channel = None
         self.bridge = None
@@ -583,6 +596,36 @@ class MozMill(object):
         # cleanup
         if self.runner is not None:
             self.runner.cleanup()
+
+    # init and start the http server
+    def http_server_start(self):
+        # Custom routes, just serve any file via GET or POST
+        routes = [("GET", "*", wptserve.handlers.file_handler),
+                  ("POST", "*", wptserve.handlers.file_handler),]
+
+        # start the server
+        port = WEB_SERVER_PORT
+        while True:
+            try:
+                self.http_server = wptserve.server.WebTestHttpd(
+                    doc_root=self.server_root,
+                    host='localhost',
+                    port=port,
+                    routes=routes)
+                self.http_server.start()
+                if self.http_server.get_url():
+                    break
+            except:
+                port += 1
+
+        # expose the URL as a pref
+        self.runner.profile.set_preferences({'extensions.mozmill.baseurl':
+                                             self.http_server.get_url()})
+
+    # stop the http server
+    def http_server_stop(self):
+        if self.http_server:
+            self.http_server.stop()
 
 
 ### method for test collection
@@ -735,7 +778,10 @@ class CLI(mozrunner.CLI):
                          dest='screenshots_path',
                          metavar='PATH',
                          help='Path of directory to use for screenshots')
-
+        group.add_option('--server-root',
+                         dest='server_root',
+                         default=None,
+                         help='Document root for serving local testcases')
         if self.handlers:
             group.add_option('--disable',
                              dest='disable',
@@ -805,7 +851,8 @@ class CLI(mozrunner.CLI):
         mozmill = MozMill(runner, self.jsbridge_port,
                           jsbridge_timeout=self.options.timeout,
                           handlers=self.event_handlers,
-                          screenshots_path=self.options.screenshots_path)
+                          screenshots_path=self.options.screenshots_path,
+                          server_root=self.options.server_root)
 
         # set debugger arguments
         mozmill.set_debugger(*self.debugger_arguments())

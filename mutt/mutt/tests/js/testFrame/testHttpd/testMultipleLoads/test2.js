@@ -4,17 +4,16 @@
 
 /**
  * Bug 767332
- * If tests use a page from the local httpd.js server more than once,
+ * If tests use a page from the local web server server more than once,
  * successive tests will fail because the server does not respond.
  **/
 
 Cu.import("resource://gre/modules/Services.jsm");
 
-const BASE_URL = collector.addHttpResource("../../../data/");
 const TEST_DATA = [
-  BASE_URL + "complex.html",
-  BASE_URL + "form.html",
-  BASE_URL + "singlediv.html"
+  baseurl + "complex.html",
+  baseurl + "form.html",
+  baseurl + "singlediv.html"
 ];
 
 
@@ -22,12 +21,12 @@ function setupModule(aModule) {
   aModule.controller = mozmill.getBrowserController();
 
   // Clear all caches so formerly loaded pages aren't stored yet
-  Services.cache.evictEntries(Ci.nsICache.STORE_ANYWHERE);
+  Services.cache2.clear()
 }
 
 
 function testLoadFromDifferentSources() {
-  // Load all pages once from httpd.js
+  // Load all pages once
   [0, 1, 2].forEach(function (aIndex) {
     loadPage(TEST_DATA[aIndex], "http-on-examine-response");
   });
@@ -35,7 +34,7 @@ function testLoadFromDifferentSources() {
   // Load the first page again which will be served from the cache
   loadPage(TEST_DATA[0], "http-on-examine-cached-response");
 
-  // Disable the cache so we can ensure that httpd.js can successfully load
+  // Disable the cache so we can ensure that the webserver can successfully load
   // a local page more than one time
   Services.prefs.setBoolPref("browser.cache.disk.enable", false);
   Services.prefs.setBoolPref("browser.cache.memory.enable", false);
@@ -88,7 +87,7 @@ function loadPage(aUrl, aResponseType) {
                  "The expected response status is set.");
 
     assert.ok(request.succeeded,
-              "HTTPd.js successfully loaded the local page: " + aUrl);
+              "The web server successfully loaded the local page: " + aUrl);
   }
   finally {
     try {
